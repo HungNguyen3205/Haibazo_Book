@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Pencil, Trash2, PlusCircle, List, BookOpen, Users, Star } from 'lucide-react';
 
 const API_URL = window.location.origin + "/api";
@@ -9,25 +9,33 @@ function App() {
   const [formData, setFormData] = useState({});
   const [errors, setErrors] = useState({});
 
-  const fetchData = async (tab) => {
+  const fetchData = useCallback(async (tab) => {
     try {
       const category = tab.split('-')[0];
       const res = await fetch(`${API_URL}/${category}/list`);
+      if (!res.ok) throw new Error("Network response was not ok");
       const result = await res.json();
       setData(Array.isArray(result) ? result : []);
     } catch (err) {
-      console.error("Lỗi fetch:", err);
+      console.error("Fetch error:", err);
       setData([]);
     }
-  };
+  }, []);
 
   useEffect(() => {
+    let isSubscribed = true;
+
     if (activeTab.includes('list')) {
       fetchData(activeTab);
     }
-    setFormData({});
-    setErrors({});
-  }, [activeTab]);
+
+    if (isSubscribed) {
+      setFormData({});
+      setErrors({});
+    }
+
+    return () => { isSubscribed = false; };
+  }, [activeTab, fetchData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -54,15 +62,19 @@ function App() {
       }
     } catch (err) {
       alert("Lỗi kết nối server!");
+      console.error(err);
     }
   };
 
-  // 3. Hàm XÓA
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa?")) {
       const category = activeTab.split('-')[0];
-      await fetch(`${API_URL}/${category}/delete/${id}`, { method: 'DELETE' });
-      fetchData(activeTab);
+      try {
+        await fetch(`${API_URL}/${category}/delete/${id}`, { method: 'DELETE' });
+        fetchData(activeTab);
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
@@ -77,13 +89,17 @@ function App() {
       else if (category === 'book') payload = { title: newValue, author: item.author };
       else if (category === 'review') payload = { book: item.book, review: newValue };
 
-      await fetch(`${API_URL}/${category}/update/${item.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      fetchData(activeTab);
-      alert("Cập nhật thành công!");
+      try {
+        await fetch(`${API_URL}/${category}/update/${item.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        fetchData(activeTab);
+        alert("Cập nhật thành công!");
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
@@ -92,7 +108,7 @@ function App() {
       {/* SIDEBAR */}
       <div style={{ width: '260px', background: '#2c3e50', color: 'white', padding: '20px' }}>
         <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#f1c40f' }}><BookOpen /> HAIBAZO</h2>
-        <hr style={{ borderColor: '#34495e', margin: '20px 0' }} />
+        <hr style={{ borderColor: '#34495e', margin: '20px 0' }} /> {/* Đã thêm dấu đóng thẻ /> */}
         
         {['auth', 'book', 'review'].map(id => (
           <div key={id} style={{ marginBottom: '25px' }}>
@@ -111,35 +127,37 @@ function App() {
       </div>
 
       <div style={{ flex: 1, padding: '40px' }}>
-        <h1>{activeTab.toUpperCase().replace('-', ' > ')}</h1>
+        <h1 style={{ marginBottom: '20px' }}>{activeTab.toUpperCase().replace('-', ' > ')}</h1>
         
         {activeTab.includes('list') ? (
-          <table border="1" style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white' }}>
-            <thead>
-              <tr style={{ background: '#ecf0f1' }}>
-                <th style={styles.th}>ID</th>
-                {data.length > 0 && Object.keys(data[0]).filter(k => k !== 'id').map(k => <th key={k} style={styles.th}>{k.toUpperCase()}</th>)}
-                <th style={{ ...styles.th, backgroundColor: '#f1c40f' }}>ACTIONS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((item, i) => (
-                <tr key={i}>
-                  <td style={styles.td}>{item.id}</td>
-                  {Object.entries(item).filter(([k]) => k !== 'id').map(([k, v], j) => <td key={j} style={styles.td}>{v}</td>)}
-                  <td style={{ backgroundColor: '#fef9e7', textAlign: 'center' }}>
-                    <button onClick={() => handleUpdate(item)} style={styles.btn}><Pencil size={14}/></button>
-                    <button onClick={() => handleDelete(item.id)} style={styles.btn}><Trash2 size={14}/></button>
-                  </td>
+          <div style={{ overflowX: 'auto', background: 'white', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: '#ecf0f1' }}>
+                  <th style={styles.th}>ID</th>
+                  {data.length > 0 && Object.keys(data[0]).filter(k => k !== 'id').map(k => <th key={k} style={styles.th}>{k.toUpperCase()}</th>)}
+                  <th style={{ ...styles.th, textAlign: 'center' }}>ACTIONS</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {data.map((item, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={styles.td}>{item.id}</td>
+                    {Object.entries(item).filter(([k]) => k !== 'id').map(([k, v], j) => <td key={j} style={styles.td}>{v}</td>)}
+                    <td style={{ textAlign: 'center' }}>
+                      <button onClick={() => handleUpdate(item)} style={styles.btn}><Pencil size={14} color="#f1c40f"/></button>
+                      <button onClick={() => handleDelete(item.id)} style={styles.btn}><Trash2 size={14} color="#e74c3c"/></button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
           <div style={{ background: 'white', padding: '30px', borderRadius: '8px', width: '400px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}>
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
               {activeTab === 'auth-create' && (
-                <input placeholder="Author Name" style={styles.input} onChange={e => setFormData({username: e.target.value})} />
+                <input placeholder="Author Name" style={styles.input} onChange={e => setFormData({...formData, username: e.target.value})} />
               )}
               {activeTab === 'book-create' && (
                 <>
@@ -153,8 +171,8 @@ function App() {
                   <textarea placeholder="Review" style={{...styles.input, height: '100px'}} onChange={e => setFormData({...formData, review: e.target.value})} />
                 </>
               )}
-              {errors.all && <span style={{ color: 'red' }}>{errors.all}</span>}
-              <button type="submit" style={{ padding: '10px', background: '#27ae60', color: 'white', border: 'none', cursor: 'pointer' }}>Create</button>
+              {errors.all && <span style={{ color: 'red', fontSize: '14px' }}>{errors.all}</span>}
+              <button type="submit" style={{ padding: '12px', background: '#27ae60', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '4px', fontWeight: 'bold' }}>Create</button>
             </form>
           </div>
         )}
@@ -164,10 +182,10 @@ function App() {
 }
 
 const styles = {
-  th: { padding: '12px', textAlign: 'left' },
-  td: { padding: '12px' },
-  btn: { border: 'none', background: 'none', cursor: 'pointer', margin: '0 5px' },
-  input: { padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }
+  th: { padding: '15px', textAlign: 'left', color: '#7f8c8d', fontSize: '13px' },
+  td: { padding: '15px', color: '#2c3e50' },
+  btn: { border: 'none', background: 'none', cursor: 'pointer', margin: '0 5px', padding: '5px' },
+  input: { padding: '12px', border: '1px solid #ddd', borderRadius: '4px', outline: 'none' }
 };
 
-export default App; 
+export default App;
