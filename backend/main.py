@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from database import get_db_connection
 from fastapi.middleware.cors import CORSMiddleware
-from mangum import Mangum
+from mangum import Mangum 
 
 app = FastAPI()
 
@@ -85,3 +85,5 @@ def delete_data(category: str, id: int):
     cur.close()
     conn.close()
     return {"status": "deleted"}
+
+handler = Mangum(app)
