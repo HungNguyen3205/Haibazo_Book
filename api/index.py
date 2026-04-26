@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
-import database
+import database  
 
 app = FastAPI()
 
@@ -29,7 +29,7 @@ def get_table_name(category: str):
 
 @app.get("/")
 def home():
-    return {"status": "Backend is running"}
+    return {"message": "Backend Haibazo is running perfectly!"}
 
 @app.get("/{category}/list")
 def list_data(category: str):
@@ -79,6 +79,7 @@ def update_data(category: str, id: int, payload: DataPayload):
 @app.delete("/{category}/delete/{id}")
 def delete_data(category: str, id: int):
     table = get_table_name(category)
+    # SỬA LỖI: Phải gọi qua module database
     conn = database.get_db_connection()
     cur = conn.cursor()
     cur.execute(f"DELETE FROM {table} WHERE id = %s", (id,))
