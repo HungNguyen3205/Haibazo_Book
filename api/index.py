@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from database import get_db_connection
+from .database import get_db_connection
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum 
 
