@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Pencil, Trash2, PlusCircle, List, BookOpen, Users, Star } from 'lucide-react';
 
-const API_URL = "http://localhost:8000";
+const API_URL = window.location.origin + "/api";
 
 function App() {
   const [activeTab, setActiveTab] = useState('book-list');
