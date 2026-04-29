@@ -7,7 +7,7 @@ def get_db_connection():
     database = os.getenv("DB_NAME", "postgres")
     user = os.getenv("DB_USER", "postgres")
     password = os.getenv("DB_PASS", "Hungnn03022005@")
-    port = os.getenv("DB_PORT", "5432")
+    port = os.getenv("DB_PORT", "6543")
 
     try:
         conn = psycopg2.connect(
