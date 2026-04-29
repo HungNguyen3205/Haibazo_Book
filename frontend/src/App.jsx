@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Pencil, Trash2, PlusCircle, List, BookOpen, Users, Star } from 'lucide-react';
 
-const API_URL = "https://haibazo-book.vercel.app/";
+const API_URL = "https://haibazo-book.vercel.app";
 
 function App() {
   const [activeTab, setActiveTab] = useState('book-list');
