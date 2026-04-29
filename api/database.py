@@ -3,10 +3,10 @@ import os
 from psycopg2.extras import RealDictCursor
 
 def get_db_connection():
-    host = os.getenv("DB_HOST", "db.cjzuoyatgfhdtvzdbpkx.supabase.co")
+    host = os.getenv("DB_HOST", "aws-1-ap-southeast-2.pooler.supabase.com")
     database = os.getenv("DB_NAME", "postgres")
-    user = os.getenv("DB_USER", "postgres")
-    password = os.getenv("DB_PASS", "Hungnn03022005@")
+    user = os.getenv("DB_USER", "postgres.cjzuoyatgfhdtvzdbpkx")
+    password = os.getenv("DB_PASS", "nguyennamhung1234")
     port = os.getenv("DB_PORT", "6543")
 
     try:
